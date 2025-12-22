@@ -27,6 +27,9 @@
                 <a href="#rooms" class="hidden sm:inline-flex btn btn-soft bg-white/0 border-white/20 text-white hover:bg-white/10">
                     Explore
                 </a>
+                <a href="{{ route('login') }}" class="btn btn-secondary">
+                    Login
+                </a>
                 <a href="#book" class="btn btn-primary">
                     Book Now
                 </a>
