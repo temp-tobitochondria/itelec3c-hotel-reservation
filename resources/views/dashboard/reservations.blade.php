@@ -17,10 +17,9 @@
 
     <div class="mt-6 rounded-2xl border border-slate-200 bg-white overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
+            <table class="w-full table-fixed text-sm break-words">
                 <thead class="bg-slate-50 text-slate-600">
                 <tr>
-                    <th class="px-4 py-3 text-left font-semibold">ID</th>
                     <th class="px-4 py-3 text-left font-semibold">Customer</th>
                     <th class="px-4 py-3 text-left font-semibold">Room</th>
                     <th class="px-4 py-3 text-left font-semibold">Check-in</th>
@@ -34,7 +33,6 @@
                 <tbody class="divide-y divide-slate-200">
                 @forelse ($reservations as $reservation)
                     <tr class="hover:bg-slate-50/60">
-                        <td class="px-4 py-3 text-slate-700">{{ $reservation->reservation_id }}</td>
                         <td class="px-4 py-3 font-medium text-slate-900">{{ $reservation->user?->full_name ?? '—' }}</td>
                         <td class="px-4 py-3 text-slate-700">{{ $reservation->room?->room_number ?? '—' }}</td>
                         <td class="px-4 py-3 text-slate-700">{{ optional($reservation->check_in_date)->format('Y-m-d') }}</td>
@@ -79,12 +77,16 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="px-4 py-6 text-center text-slate-500">No reservations found.</td>
+                        <td colspan="8" class="px-4 py-6 text-center text-slate-500">No reservations found.</td>
                     </tr>
                 @endforelse
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <div class="mt-4">
+        {{ $reservations->links() }}
     </div>
 
     <div id="reservationModal" class="fixed inset-0 z-50 hidden">

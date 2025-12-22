@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\UserLog;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\Request;
 
 class LoginController extends Controller
 {
@@ -34,5 +36,40 @@ class LoginController extends Controller
     public function username()
     {
         return 'username';
+    }
+
+    protected function authenticated(Request $request, $user)
+    {
+        if ($user) {
+            UserLog::record($user->user_id, 'Logged in');
+        }
+
+        $request->session()->flash('success', 'Logged in successfully.');
+    }
+
+    protected function sendFailedLoginResponse(Request $request)
+    {
+        return redirect()
+            ->back()
+            ->withInput($request->only($this->username(), 'remember'))
+            ->withErrors([
+                $this->username() => trans('auth.failed'),
+            ])
+            ->with('error', 'Incorrect password.');
+    }
+
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+        if ($user) {
+            UserLog::record($user->user_id, 'Logged out');
+        }
+
+        $this->guard()->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/')->with('success', 'Logged out successfully.');
     }
 }

@@ -7,12 +7,32 @@ use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\User;
 use App\Models\UserLog;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    private function formatDateOnly(?string $value): string
+    {
+        if (!$value) {
+            return '—';
+        }
+
+        return Carbon::parse($value)->toDateString();
+    }
+
+    private function logAction(Request $request, string $action): void
+    {
+        $actor = $request->user();
+        if (!$actor) {
+            return;
+        }
+
+        UserLog::record($actor->user_id, $action);
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -46,7 +66,8 @@ class DashboardController extends Controller
     {
         $users = User::query()
             ->orderBy('user_id')
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         return view('dashboard.users', compact('users'));
     }
@@ -61,13 +82,15 @@ class DashboardController extends Controller
             'password' => ['required', 'string', 'min:6'],
         ]);
 
-        User::create([
+        $newUser = User::create([
             'full_name' => $validated['full_name'],
             'role' => $validated['role'],
             'username' => $validated['username'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
         ]);
+
+        $this->logAction($request, "Created user '{$newUser->username}' (role: {$newUser->role})");
 
         return redirect()->route('dashboard.users')->with('success', 'User added.');
     }
@@ -97,12 +120,19 @@ class DashboardController extends Controller
 
         $user->save();
 
+        $this->logAction($request, "Updated user '{$user->username}' (ID: {$user->user_id})");
+
         return redirect()->route('dashboard.users')->with('success', 'User updated.');
     }
 
-    public function usersDestroy(int $userId)
+    public function usersDestroy(Request $request, int $userId)
     {
+        $user = User::query()->where('user_id', $userId)->first();
         User::query()->where('user_id', $userId)->delete();
+
+        if ($user) {
+            $this->logAction($request, "Deleted user '{$user->username}' (ID: {$user->user_id})");
+        }
 
         return redirect()->route('dashboard.users')->with('success', 'User deleted.');
     }
@@ -112,8 +142,8 @@ class DashboardController extends Controller
         $logs = UserLog::query()
             ->with('user')
             ->orderByDesc('date_time')
-            ->limit(200)
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         return view('dashboard.logs', compact('logs'));
     }
@@ -122,7 +152,8 @@ class DashboardController extends Controller
     {
         $rooms = Room::query()
             ->orderBy('room_number')
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         return view('dashboard.rooms', compact('rooms'));
     }
@@ -138,7 +169,9 @@ class DashboardController extends Controller
             'availability_status' => ['required', 'string', 'max:255'],
         ]);
 
-        Room::create($validated);
+        $room = Room::create($validated);
+
+        $this->logAction($request, "Created room {$room->room_number} ({$room->room_type})");
 
         return redirect()->route('dashboard.rooms')->with('success', 'Room added.');
     }
@@ -158,12 +191,19 @@ class DashboardController extends Controller
 
         $room->update($validated);
 
+        $this->logAction($request, "Updated room {$room->room_number} (ID: {$room->room_id})");
+
         return redirect()->route('dashboard.rooms')->with('success', 'Room updated.');
     }
 
-    public function roomsDestroy(int $roomId)
+    public function roomsDestroy(Request $request, int $roomId)
     {
+        $room = Room::query()->where('room_id', $roomId)->first();
         Room::query()->where('room_id', $roomId)->delete();
+
+        if ($room) {
+            $this->logAction($request, "Deleted room {$room->room_number} (ID: {$room->room_id})");
+        }
 
         return redirect()->route('dashboard.rooms')->with('success', 'Room deleted.');
     }
@@ -172,7 +212,8 @@ class DashboardController extends Controller
     {
         $amenities = Amenity::query()
             ->orderBy('amenity_name')
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         return view('dashboard.amenities', compact('amenities'));
     }
@@ -185,7 +226,9 @@ class DashboardController extends Controller
             'price_per_use' => ['required', 'numeric', 'min:0'],
         ]);
 
-        Amenity::create($validated);
+        $amenity = Amenity::create($validated);
+
+        $this->logAction($request, "Created amenity '{$amenity->amenity_name}'");
 
         return redirect()->route('dashboard.amenities')->with('success', 'Amenity added.');
     }
@@ -202,12 +245,19 @@ class DashboardController extends Controller
 
         $amenity->update($validated);
 
+        $this->logAction($request, "Updated amenity '{$amenity->amenity_name}' (ID: {$amenity->amenity_id})");
+
         return redirect()->route('dashboard.amenities')->with('success', 'Amenity updated.');
     }
 
-    public function amenitiesDestroy(int $amenityId)
+    public function amenitiesDestroy(Request $request, int $amenityId)
     {
+        $amenity = Amenity::query()->where('amenity_id', $amenityId)->first();
         Amenity::query()->where('amenity_id', $amenityId)->delete();
+
+        if ($amenity) {
+            $this->logAction($request, "Deleted amenity '{$amenity->amenity_name}' (ID: {$amenity->amenity_id})");
+        }
 
         return redirect()->route('dashboard.amenities')->with('success', 'Amenity deleted.');
     }
@@ -217,7 +267,8 @@ class DashboardController extends Controller
         $reservations = Reservation::query()
             ->with(['user', 'room', 'amenities'])
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         $users = User::query()->orderBy('full_name')->get();
         $rooms = Room::query()->orderBy('room_number')->get();
@@ -239,7 +290,7 @@ class DashboardController extends Controller
         $nights = max(1, now()->parse($validated['check_in_date'])->diffInDays(now()->parse($validated['check_out_date'])));
         $totalPrice = $nights * (float) $room->price_per_night;
 
-        Reservation::create([
+        $reservation = Reservation::create([
             'user_id' => $validated['user_id'],
             'room_id' => $validated['room_id'],
             'check_in_date' => $validated['check_in_date'],
@@ -247,6 +298,13 @@ class DashboardController extends Controller
             'total_price' => $totalPrice,
             'reservation_status' => $validated['reservation_status'],
         ]);
+
+        $reservationUser = User::query()->where('user_id', $reservation->user_id)->first();
+        $username = $reservationUser?->username ?? (string) $reservation->user_id;
+        $checkIn = $this->formatDateOnly($reservation->check_in_date);
+        $checkOut = $this->formatDateOnly($reservation->check_out_date);
+
+        $this->logAction($request, "Created reservation #{$reservation->reservation_id} for {$username} (Room {$room->room_number}, {$checkIn} to {$checkOut})");
 
         return redirect()->route('dashboard.reservations')->with('success', 'Reservation added.');
     }
@@ -276,12 +334,29 @@ class DashboardController extends Controller
             'reservation_status' => $validated['reservation_status'],
         ]);
 
+        $reservationUser = User::query()->where('user_id', $reservation->user_id)->first();
+        $username = $reservationUser?->username ?? (string) $reservation->user_id;
+        $checkIn = $this->formatDateOnly($reservation->check_in_date);
+        $checkOut = $this->formatDateOnly($reservation->check_out_date);
+
+        $this->logAction($request, "Updated reservation #{$reservation->reservation_id} for {$username} (Room {$room->room_number}, {$checkIn} to {$checkOut}, status: {$reservation->reservation_status})");
+
         return redirect()->route('dashboard.reservations')->with('success', 'Reservation updated.');
     }
 
-    public function reservationsDestroy(int $reservationId)
+    public function reservationsDestroy(Request $request, int $reservationId)
     {
+        $reservation = Reservation::query()->with(['user', 'room'])->where('reservation_id', $reservationId)->first();
         Reservation::query()->where('reservation_id', $reservationId)->delete();
+
+        if ($reservation) {
+            $username = $reservation->user?->username ?? (string) $reservation->user_id;
+            $roomNumber = $reservation->room?->room_number ?? (string) $reservation->room_id;
+            $checkIn = $this->formatDateOnly($reservation->check_in_date);
+            $checkOut = $this->formatDateOnly($reservation->check_out_date);
+
+            $this->logAction($request, "Deleted reservation #{$reservation->reservation_id} for {$username} (Room {$roomNumber}, {$checkIn} to {$checkOut})");
+        }
 
         return redirect()->route('dashboard.reservations')->with('success', 'Reservation deleted.');
     }
@@ -295,14 +370,16 @@ class DashboardController extends Controller
                     ->orWhere('reservation_status', 'Pending');
             })
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         return view('dashboard.approvals', compact('pendingReservations'));
     }
 
-    public function approvalsApprove(int $reservationId)
+    public function approvalsApprove(Request $request, int $reservationId)
     {
         $reservation = Reservation::query()
+            ->with(['user', 'room'])
             ->where('reservation_id', $reservationId)
             ->firstOrFail();
 
@@ -312,14 +389,32 @@ class DashboardController extends Controller
             ->where('room_id', $reservation->room_id)
             ->update(['availability_status' => 'unavailable']);
 
+        $username = $reservation->user?->username ?? (string) $reservation->user_id;
+        $roomNumber = $reservation->room?->room_number ?? (string) $reservation->room_id;
+        $checkIn = $this->formatDateOnly($reservation->check_in_date);
+        $checkOut = $this->formatDateOnly($reservation->check_out_date);
+
+        $this->logAction($request, "Approved reservation #{$reservation->reservation_id} for {$username} (Room {$roomNumber}, {$checkIn} to {$checkOut})");
+
         return redirect()->route('dashboard.approvals')->with('success', 'Reservation approved.');
     }
 
-    public function approvalsReject(int $reservationId)
+    public function approvalsReject(Request $request, int $reservationId)
     {
+        $reservation = Reservation::query()->with(['user', 'room'])->where('reservation_id', $reservationId)->first();
+
         Reservation::query()
             ->where('reservation_id', $reservationId)
             ->update(['reservation_status' => 'rejected']);
+
+        if ($reservation) {
+            $username = $reservation->user?->username ?? (string) $reservation->user_id;
+            $roomNumber = $reservation->room?->room_number ?? (string) $reservation->room_id;
+            $checkIn = $this->formatDateOnly($reservation->check_in_date);
+            $checkOut = $this->formatDateOnly($reservation->check_out_date);
+
+            $this->logAction($request, "Rejected reservation #{$reservation->reservation_id} for {$username} (Room {$roomNumber}, {$checkIn} to {$checkOut})");
+        }
 
         return redirect()->route('dashboard.approvals')->with('success', 'Reservation rejected.');
     }
@@ -332,7 +427,8 @@ class DashboardController extends Controller
             ->with(['room', 'amenities'])
             ->where('user_id', $user->user_id)
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         return view('dashboard.my-reservations', compact('reservations'));
     }
@@ -345,7 +441,7 @@ class DashboardController extends Controller
     private function reserveWithFilters(Request $request)
     {
         $validated = $request->validate([
-            'check_in_date' => ['nullable', 'date'],
+            'check_in_date' => ['nullable', 'date', 'after_or_equal:today'],
             'check_out_date' => ['nullable', 'date', 'after:check_in_date'],
             'guests' => ['nullable', 'integer', 'min:1'],
             'room_type' => ['nullable', 'string', 'max:255'],
@@ -390,7 +486,7 @@ class DashboardController extends Controller
 
         $validated = $request->validate([
             'room_id' => ['required', 'integer', 'exists:rooms,room_id'],
-            'check_in_date' => ['required', 'date'],
+            'check_in_date' => ['required', 'date', 'after_or_equal:today'],
             'check_out_date' => ['required', 'date', 'after:check_in_date'],
             'amenity_ids' => ['nullable', 'array'],
             'amenity_ids.*' => ['integer', 'exists:amenities,amenity_id'],
@@ -442,6 +538,16 @@ class DashboardController extends Controller
             }
         }
 
-        return redirect()->route('dashboard.my-reservations')->with('success', 'Reservation created and is pending approval.');
+        $checkIn = $this->formatDateOnly($reservation->check_in_date);
+        $checkOut = $this->formatDateOnly($reservation->check_out_date);
+
+        $username = $user->username ?? ($user->full_name ?? 'User');
+        $this->logAction($request, "{$username} created reservation #{$reservation->reservation_id} (Room {$room->room_number}, {$checkIn} to {$checkOut})");
+
+        if (($user->role ?? null) === 'Customer') {
+            return redirect()->route('dashboard.my-reservations')->with('success', 'Reservation created and is pending approval.');
+        }
+
+        return redirect()->route('dashboard.reservations')->with('success', 'Reservation created and is pending approval.');
     }
 }

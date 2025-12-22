@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class UserLog extends Model
 {
@@ -27,6 +28,15 @@ class UserLog extends Model
         return [
             'date_time' => 'datetime',
         ];
+    }
+
+    public static function record(int $userId, string $action, ?Carbon $dateTime = null): self
+    {
+        return self::create([
+            'user_id' => $userId,
+            'action' => $action,
+            'date_time' => $dateTime ?? now(),
+        ]);
     }
 
     public function user(): BelongsTo

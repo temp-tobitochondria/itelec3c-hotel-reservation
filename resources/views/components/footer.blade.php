@@ -34,7 +34,7 @@
                 <ul class="mt-4 space-y-2 text-sm text-white/60">
                     <li>123 Sunset Avenue</li>
                     <li>City Center, Philippines</li>
-                    <li>+63 900 000 0000</li>
+                    <li>+63 949 959 3866</li>
                     <li>info@aurumhotel.com</li>
                 </ul>
             </div>

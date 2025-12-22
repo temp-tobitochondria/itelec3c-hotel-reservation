@@ -21,7 +21,7 @@
     <div class="mt-6 rounded-2xl border border-slate-200 bg-white overflow-hidden">
         <div class="px-4 py-3 bg-slate-50 text-sm text-slate-600">Available rooms</div>
         <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
+            <table class="w-full table-fixed text-sm break-words">
                 <thead class="bg-white text-slate-600">
                 <tr class="border-b border-slate-200">
                     <th class="px-4 py-3 text-left font-semibold">Room #</th>

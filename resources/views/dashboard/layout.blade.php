@@ -38,7 +38,6 @@
                                     <a href="{{ route('dashboard.reservations') }}" class="block rounded-xl px-3 py-2 border border-slate-200 hover:bg-slate-50">Reservations</a>
                                     <a href="{{ route('dashboard.approvals') }}" class="block rounded-xl px-3 py-2 border border-slate-200 hover:bg-slate-50">Approve Reservations</a>
                                 @else
-                                    <a href="{{ route('dashboard.rooms') }}" class="block rounded-xl px-3 py-2 border border-slate-200 hover:bg-slate-50">Rooms & Availability</a>
                                     <a href="{{ route('dashboard.my-reservations') }}" class="block rounded-xl px-3 py-2 border border-slate-200 hover:bg-slate-50">My Reservations</a>
                                     <a href="{{ route('dashboard.reserve') }}" class="block rounded-xl px-3 py-2 border border-slate-200 hover:bg-slate-50">Reserve a Room</a>
                                 @endif

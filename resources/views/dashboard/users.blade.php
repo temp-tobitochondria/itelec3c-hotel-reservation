@@ -17,10 +17,9 @@
 
     <div class="mt-6 rounded-2xl border border-slate-200 bg-white overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
+            <table class="w-full table-fixed text-sm break-words">
                 <thead class="bg-slate-50 text-slate-600">
                 <tr>
-                    <th class="px-4 py-3 text-left font-semibold">ID</th>
                     <th class="px-4 py-3 text-left font-semibold">Full Name</th>
                     <th class="px-4 py-3 text-left font-semibold">Username</th>
                     <th class="px-4 py-3 text-left font-semibold">Email</th>
@@ -31,7 +30,6 @@
                 <tbody class="divide-y divide-slate-200">
                 @forelse ($users as $user)
                     <tr class="hover:bg-slate-50/60">
-                        <td class="px-4 py-3 text-slate-700">{{ $user->user_id }}</td>
                         <td class="px-4 py-3 font-medium text-slate-900">{{ $user->full_name }}</td>
                         <td class="px-4 py-3 text-slate-700">{{ $user->username }}</td>
                         <td class="px-4 py-3 text-slate-700">{{ $user->email }}</td>
@@ -66,12 +64,16 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-6 text-center text-slate-500">No users found.</td>
+                        <td colspan="5" class="px-4 py-6 text-center text-slate-500">No users found.</td>
                     </tr>
                 @endforelse
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <div class="mt-4">
+        {{ $users->links() }}
     </div>
 
     <div id="userModal" class="fixed inset-0 z-50 hidden">

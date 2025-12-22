@@ -138,6 +138,52 @@
     </div>
 </form>
 
+                            <script>
+                                window.addEventListener('DOMContentLoaded', () => {
+                                    const form = document.getElementById('home-booking-form');
+                                    if (!form) return;
+
+                                    const checkIn = form.querySelector('input[name="check_in_date"]');
+                                    const checkOut = form.querySelector('input[name="check_out_date"]');
+                                    if (!checkIn || !checkOut) return;
+
+                                    const pad2 = (n) => String(n).padStart(2, '0');
+                                    const toYmd = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0);
+                                    const todayStr = toYmd(today);
+
+                                    checkIn.min = todayStr;
+                                    checkOut.min = todayStr;
+
+                                    const syncCheckoutMin = () => {
+                                        if (!checkIn.value) {
+                                            checkOut.min = todayStr;
+                                            return;
+                                        }
+
+                                        const inDate = new Date(`${checkIn.value}T00:00:00`);
+                                        if (Number.isNaN(inDate.getTime())) {
+                                            checkOut.min = todayStr;
+                                            return;
+                                        }
+
+                                        const minOut = new Date(inDate);
+                                        minOut.setDate(minOut.getDate() + 1);
+                                        const minOutStr = toYmd(minOut);
+                                        checkOut.min = minOutStr;
+
+                                        if (checkOut.value && checkOut.value < minOutStr) {
+                                            checkOut.value = '';
+                                        }
+                                    };
+
+                                    checkIn.addEventListener('change', syncCheckoutMin);
+                                    syncCheckoutMin();
+                                });
+                            </script>
+
                             @guest
                                 <script>
                                     window.addEventListener('DOMContentLoaded', () => {

@@ -17,7 +17,7 @@
 
     <div class="mt-6 rounded-2xl border border-slate-200 bg-white overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
+            <table class="w-full table-fixed text-sm break-words">
                 <thead class="bg-slate-50 text-slate-600">
                 <tr>
                     <th class="px-4 py-3 text-left font-semibold">Amenity</th>
@@ -67,6 +67,10 @@
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <div class="mt-4">
+        {{ $amenities->links() }}
     </div>
 
     <div id="amenityModal" class="fixed inset-0 z-50 hidden">

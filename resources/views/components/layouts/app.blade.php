@@ -43,5 +43,39 @@
             };
         });
     </script>
+
+    @if (session('success'))
+        <script>
+            window.addEventListener('DOMContentLoaded', async () => {
+                if (!window.ensureSwal) return;
+                const Swal = await window.ensureSwal();
+                if (!Swal) return;
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: @json(session('success')),
+                    timer: 1600,
+                    showConfirmButton: false,
+                });
+            });
+        </script>
+    @endif
+
+    @if (session('error'))
+        <script>
+            window.addEventListener('DOMContentLoaded', async () => {
+                if (!window.ensureSwal) return;
+                const Swal = await window.ensureSwal();
+                if (!Swal) return;
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: @json(session('error')),
+                });
+            });
+        </script>
+    @endif
 </body>
 </html>
