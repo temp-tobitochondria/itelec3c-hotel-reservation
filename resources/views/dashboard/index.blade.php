@@ -1,18 +1,6 @@
 <x-dashboard.layout>
     @php
         $role = auth()->user()->role;
-
-        $totalReservations = \App\Models\Reservation::count();
-        $today = now()->toDateString();
-        $todayCheckIns = \App\Models\Reservation::whereDate('check_in_date', $today)->count();
-        $todayCheckOuts = \App\Models\Reservation::whereDate('check_out_date', $today)->count();
-        $totalRevenue = (float) \App\Models\Reservation::sum('total_price');
-
-        $roomsTotal = \App\Models\Room::count();
-        $roomsAvailable = \App\Models\Room::where('availability_status', 'available')->count();
-        $roomsUnavailable = max($roomsTotal - $roomsAvailable, 0);
-
-        $myReservations = \App\Models\Reservation::where('user_id', auth()->user()->user_id)->count();
     @endphp
 
     <div class="flex items-center justify-between">

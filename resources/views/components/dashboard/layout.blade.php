@@ -75,6 +75,87 @@
                         <div class="mt-6">
                             {{ $slot }}
                         </div>
+
+                        @if (session('success'))
+                            <script>
+                                window.addEventListener('DOMContentLoaded', () => {
+                                    const show = () => {
+                                        window.Swal.fire({
+                                            icon: 'success',
+                                            title: 'Success',
+                                            text: @json(session('success')),
+                                            timer: 1600,
+                                            showConfirmButton: false,
+                                        });
+                                    };
+
+                                    if (window.Swal) {
+                                        show();
+                                        return;
+                                    }
+
+                                    // Fallback: load SweetAlert2 from CDN (useful if Vite build/dev isn't running)
+                                    const script = document.createElement('script');
+                                    script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                                    script.onload = () => {
+                                        if (window.Swal) show();
+                                    };
+                                    document.head.appendChild(script);
+                                });
+                            </script>
+                        @endif
+
+                        <script>
+                            window.addEventListener('DOMContentLoaded', () => {
+                                const ensureSwal = () => {
+                                    if (window.Swal) return Promise.resolve(window.Swal);
+
+                                    return new Promise((resolve) => {
+                                        const existing = document.querySelector('script[data-swal-cdn]');
+                                        if (existing) {
+                                            existing.addEventListener('load', () => resolve(window.Swal));
+                                            return;
+                                        }
+
+                                        const script = document.createElement('script');
+                                        script.dataset.swalCdn = '1';
+                                        script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                                        script.onload = () => resolve(window.Swal);
+                                        document.head.appendChild(script);
+                                    });
+                                };
+
+                                document.addEventListener('submit', async (e) => {
+                                    const form = e.target;
+                                    if (!(form instanceof HTMLFormElement)) return;
+                                    if (!form.hasAttribute('data-swal-confirm')) return;
+
+                                    e.preventDefault();
+
+                                    const title = form.getAttribute('data-swal-title') || 'Are you sure?';
+                                    const text = form.getAttribute('data-swal-text') || 'This action cannot be undone.';
+                                    const confirmText = form.getAttribute('data-swal-confirm-text') || 'Yes, continue';
+                                    const cancelText = form.getAttribute('data-swal-cancel-text') || 'Cancel';
+
+                                    const Swal = await ensureSwal();
+                                    if (!Swal) return;
+
+                                    const result = await Swal.fire({
+                                        icon: 'warning',
+                                        title,
+                                        text,
+                                        showCancelButton: true,
+                                        confirmButtonText: confirmText,
+                                        cancelButtonText: cancelText,
+                                        reverseButtons: true,
+                                    });
+
+                                    if (result.isConfirmed) {
+                                        form.submit();
+                                    }
+                                }, true);
+                            });
+                        </script>
                     </main>
                 </div>
             </div>
