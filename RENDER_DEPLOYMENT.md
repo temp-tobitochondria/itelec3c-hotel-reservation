@@ -45,9 +45,9 @@ git push -u origin main
 - **Region**: Same as your database
 - **Branch**: `main`
 - **Root Directory**: Leave blank
-- **Runtime**: `PHP`
-- **Build Command**: `bash build.sh`
-- **Start Command**: `bash start.sh`
+- **Language**: `Docker`
+- **Build Command**: Leave blank (Docker handles this)
+- **Start Command**: Leave blank (Docker handles this)
 
 ### Instance Type:
 - **Plan**: **Free** (512MB RAM, sleeps after 15 min inactivity)
