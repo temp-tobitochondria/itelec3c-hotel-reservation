@@ -32,7 +32,9 @@ COPY . /var/www/html
 RUN composer install --optimize-autoloader --no-dev
 
 # Install NPM dependencies and build assets
-RUN npm ci && npm run build
+# Ensure devDependencies (vite, tailwind, postcss) are installed even when NODE_ENV=production
+# Use npm ci with explicit include of dev deps
+RUN npm ci --include=dev && npm run build
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
