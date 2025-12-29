@@ -12,8 +12,5 @@ php artisan view:cache
 # Run migrations
 php artisan migrate --force
 
-# Seed database (optional - comment out if not needed)
-php artisan db:seed --force || true
-
 # Execute the CMD
 exec "$@"
